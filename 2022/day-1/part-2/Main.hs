@@ -1,15 +1,15 @@
 module Main where
 import Text.Read (readMaybe)
 import Data.List (sort)
+import Data.Maybe (isJust, fromJust)
 
-isJust :: Maybe a -> Bool
-isJust Nothing = False
-isJust _ = True
+tail' :: [a] -> [a]
+tail' [] = []
+tail' l = tail l
 
 subSums :: [Maybe Int] -> [Int]
 subSums [] = []
-subSums (Nothing:rest) = subSums rest
-subSums l@((Just _):_) = (sum ((\(Just x) -> x) <$> values)) : subSums rest
+subSums l = (sum (fromJust <$> values)) : (subSums $ tail' rest)
     where
         (values, rest) = span isJust l
 
