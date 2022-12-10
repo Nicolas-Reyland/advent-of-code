@@ -38,7 +38,7 @@ applyMoves pos@(headp, tailp) (m:ms) = tails ++ applyMoves next_pos ms
         tails = map snd $ init all_next_pos
 
 applyMove :: PositionTuple -> Move -> [PositionTuple]
-applyMove pos (Move dir count) = customScanL applyDirection pos $ replicate count dir
+applyMove pos (Move dir count) = scanl applyDirection pos $ replicate count dir
 
 applyDirection :: PositionTuple -> Direction -> PositionTuple
 applyDirection (headp, tailp) dir = (next_headp, moveTail next_headp tailp)
@@ -69,10 +69,6 @@ moveTail headp@(hx, hy) tailp@(tx, ty) =
 div' :: Integral n => n -> n -> n
 div' 0 _ = 0
 div' a b = div a b
-
-customScanL :: (a -> e -> a) -> a -> [e] -> [a]
-customScanL _ a [] = [a]
-customScanL f a (x:xs) = a : customScanL f (f a x) xs
 
 main :: IO ()
 main = interact $ show . length . nub . (applyMoves start) . parseInput
