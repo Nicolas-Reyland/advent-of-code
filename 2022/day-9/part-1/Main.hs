@@ -26,14 +26,6 @@ directionTuple dir = case dir of
 tupleAdd :: (Num a) => (a, a) -> (a, a) -> (a, a)
 tupleAdd (a, b) (c, d) = (a + c, b + d)
 
-newPositionsFromMove :: Position -> Move -> [Position]
-newPositionsFromMove (x, y) move@(Move dir count) = take count $ iterate (tupleAdd baseMovement) baseMovement
-    where
-        baseMovement = directionTuple dir
-
-infiniteMap :: [Position]
-infiniteMap = [(x, y) | x <- [0..], y <- [0..]]
-
 parseInput :: String -> [Move]
 parseInput = (map (\(dirc:' ':n) -> Move (dirFromChar dirc) (read n))) . lines
 
@@ -49,7 +41,7 @@ applyMove :: PositionTuple -> Move -> [PositionTuple]
 applyMove pos (Move dir count) = customScanL applyDirection pos $ replicate count dir
 
 applyDirection :: PositionTuple -> Direction -> PositionTuple
-applyDirection  (headp, tailp) dir = (next_headp, moveTail next_headp tailp)
+applyDirection (headp, tailp) dir = (next_headp, moveTail next_headp tailp)
     where
         next_headp = tupleAdd headp $ directionTuple dir
 
@@ -83,6 +75,6 @@ customScanL _ a [] = [a]
 customScanL f a (x:xs) = a : customScanL f (f a x) xs
 
 main :: IO ()
-main = interact $ show . length . nub . (applyMoves startPositions) . parseInput
+main = interact $ show . length . nub . (applyMoves start) . parseInput
     where
-        startPositions = ((0, 0), (0, 0))
+        start = ((0, 0), (0, 0))
