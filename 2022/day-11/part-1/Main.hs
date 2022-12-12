@@ -3,7 +3,7 @@ import Data.List (stripPrefix)
 import Data.Maybe (fromJust, fromMaybe)
 
 data Monkey = Monkey { identifier :: Int
-                     , startingItems :: [Int]
+                     , items :: ([Int], [Int])
                      , operation :: Operation
                      , test :: Int
                      , success :: Int
@@ -55,7 +55,7 @@ parseMonkey (m_id:start:op:tst:succ:fail:[]) =
         -- failure
         failure_s = strictStripPrefix "    If false: throw to monkey " fail
         failure = read failure_s
-    in Monkey identifier starting_items operation test success failure
+    in Monkey identifier (starting_items, []) operation test success failure
 
 splitIntList :: String -> [Int]
 splitIntList [] = []
@@ -83,12 +83,73 @@ parseOpOperator :: String -> (String, OpOperator)
 parseOpOperator ('+':' ':rest) = (rest, PlusOp)
 parseOpOperator ('*':' ':rest) = (rest, MultOp)
 
-runOperation :: Int -> Operation -> Int
-runOperation old (Operation val1 op val2) =
+idFromMonkey :: Monkey -> Int
+idFromMonkey (Monkey id_ _ _ _ _ _) = id_
+
+monkeyFromId :: Int -> [Monkey] -> Monkey
+monkeyFromId identifier = head . (filter ((==identifier) . idFromMonkey))
+
+playRound :: [Monkey] -> [Monkey]
+playRound ms = customFoldL playMonkey ms $ map idFromMonkey ms
+
+swapItemList :: Int -> [Monkey] -> [Monkey]
+swapItemList m_id monkeys = replaceNth m_id new_monkey monkeys
+    where
+        monkey@(Monkey id_ (cur_items, new_items) op test succ fail) = monkeyFromId m_id monkeys
+        new_monkey = Monkey id_ (cur_items ++ reverse new_items, []) op test succ fail
+
+playMonkey :: [Monkey] -> Int -> [Monkey]
+playMonkey monkeys m_id = customFoldL (inspectItem m_id) monkeys [0..(length items - 1)]
+    where (Monkey _ (items, _) _ _ _ _) = monkeyFromId m_id monkeys
+
+inspectItem :: Int -> [Monkey] -> Int -> [Monkey]
+inspectItem m_id monkeys item_index =
+    swapItemList m_id $ throwItem monkeys m_id item_index new_item_wl (if runTest test new_item_wl then succ else fail)
+        where
+            (item_wl, monkey@(Monkey _ (items, _) op test succ fail)) = extractItem m_id monkeys
+            new_item_wl = (runOperation op item_wl) `div` 3
+
+extractItem :: Int -> [Monkey] -> (Int, Monkey)
+extractItem m_id monkeys = (item, new_monkey)
+    where
+        monkey@(Monkey id_ ((item:items), next_items) op test succ fail) = monkeyFromId m_id monkeys
+        new_monkey = Monkey id_ (items, next_items) op test succ fail
+
+runOperation :: Operation -> Int -> Int
+runOperation (Operation val1 op val2) old =
     (case op of
         PlusOp -> (+)
         MultOp -> (*)
     ) (fromMaybe old val1) (fromMaybe old val2)
 
+runTest :: Int -> Int -> Bool
+runTest test value = value `mod` test == 0
+
+throwItem :: [Monkey] -> Int -> Int -> Int -> Int -> [Monkey]
+throwItem monkeys m_id item_index item_wl dest_m_id =
+        replaceNth dest_m_id new_dest_monkey monkeys
+        where
+            dest_monkey@(Monkey dest_id (od_items, nd_items) dest_op dest_test dest_succ dest_fail) = monkeyFromId dest_m_id monkeys
+            new_dest_monkey = Monkey dest_id (od_items, item_wl : nd_items) dest_op dest_test dest_succ dest_fail
+
+playGame :: Int -> [Monkey] -> [Monkey]
+playGame 0 monkeys = monkeys
+playGame n monkeys = playGame (pred n) $ playRound monkeys
+
+-- Main
 main :: IO ()
-main = interact $ unlines . (map show) . parseInput
+main = interact $ unlines . (map show) . (playGame 1) . parseInput
+
+-- Utils
+customFoldL :: (a -> e -> a) -> a -> [e] -> a
+customFoldL _ a [] = a
+customFoldL f a (x:xs) = customFoldL f (f a x) xs
+
+replaceNth :: Int -> a -> [a] -> [a]
+replaceNth _ _ [] = []
+replaceNth n newVal (x:xs)
+    | n == 0 = newVal:xs
+    | otherwise = x:replaceNth (n - 1) newVal xs
+
+removeNth :: Int -> [a] -> [a]
+removeNth n l = take (n - 1) l ++ drop (n + 1) l
