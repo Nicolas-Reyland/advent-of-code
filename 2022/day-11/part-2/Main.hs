@@ -3,9 +3,9 @@ import Data.List (stripPrefix, sort)
 import Data.Maybe (fromJust, fromMaybe)
 
 data Monkey = Monkey { identifier :: Int
-                     , items :: [Int]
+                     , items :: [Integer]
                      , operation :: Operation
-                     , test :: Int
+                     , test :: Integer
                      , success :: Int
                      , failure :: Int
                      , inspections :: Int
@@ -13,7 +13,7 @@ data Monkey = Monkey { identifier :: Int
 
 data Operation = Operation OpValue OpOperator OpValue
 data OpOperator = PlusOp | MultOp
-type OpValue = Maybe Int
+type OpValue = Maybe Integer
 
 instance Eq Monkey where
     (Monkey id1 _ _ _ _ _ _) == (Monkey id2 _ _ _ _ _ inspections2) = id1 == id2
@@ -66,7 +66,7 @@ parseMonkey (m_id:start:op:tst:succ:fail:[]) =
         failure = read failure_s
     in Monkey identifier starting_items operation test success failure 0
 
-splitIntList :: String -> [Int]
+splitIntList :: String -> [Integer]
 splitIntList [] = []
 splitIntList (a:b:[]) = [read (a:b:"")]
 splitIntList (a:b:',':' ':c) = read (a:b:"") : splitIntList c
@@ -110,25 +110,25 @@ inspectItem m_id monkeys item_index =
     throwItem new_monkeys m_id item_index new_item_wl (if runTest test new_item_wl then succ else fail)
         where
             (item_wl, monkey@(Monkey _ items op test succ fail _), new_monkeys) = extractItem m_id monkeys
-            new_item_wl = (runOperation op item_wl) `div` 3
+            new_item_wl = runOperation op item_wl
 
-extractItem :: Int -> [Monkey] -> (Int, Monkey, [Monkey])
+extractItem :: Int -> [Monkey] -> (Integer, Monkey, [Monkey])
 extractItem m_id monkeys = (item, new_monkey, replaceNth m_id new_monkey monkeys)
     where
         monkey@(Monkey id_ (item:items) op test succ fail inspections) = monkeyFromId m_id monkeys
         new_monkey = Monkey id_ items op test succ fail (inspections + 1)
 
-runOperation :: Operation -> Int -> Int
+runOperation :: Operation -> Integer -> Integer
 runOperation (Operation val1 op val2) old =
     (case op of
         PlusOp -> (+)
         MultOp -> (*)
     ) (fromMaybe old val1) (fromMaybe old val2)
 
-runTest :: Int -> Int -> Bool
+runTest :: Integer -> Integer -> Bool
 runTest test value = value `mod` test == 0
 
-throwItem :: [Monkey] -> Int -> Int -> Int -> Int -> [Monkey]
+throwItem :: [Monkey] -> Int -> Int -> Integer -> Int -> [Monkey]
 throwItem monkeys m_id item_index item_wl dest_m_id =
         replaceNth dest_m_id new_dest_monkey monkeys
         where
@@ -144,7 +144,7 @@ monkeyBusiness (Monkey _ _ _ _ _ _ inspections1) (Monkey _ _ _ _ _ _ inspections
 
 -- Main
 main :: IO ()
-main = interact $ show . (\(m1:[m2]) -> monkeyBusiness m1 m2) . (take 2) . reverse . sort . (playGame 20) . parseInput
+main = interact $ show . (\(m1:[m2]) -> monkeyBusiness m1 m2) . (take 2) . reverse . sort . (playGame 1000) . parseInput
 
 -- Utils
 customFoldL :: (a -> e -> a) -> a -> [e] -> a
