@@ -1,16 +1,16 @@
 module Main where
-import Text.Read (readMaybe)
-import Data.Maybe (isJust, fromJust)
+import Data.Char (isDigit, digitToInt)
+import Data.List (find)
+import Data.Maybe (fromJust)
 
-tail' :: [a] -> [a]
-tail' [] = []
-tail' l = tail l
-
-subSums :: [Maybe Int] -> [Int]
-subSums [] = []
-subSums l = (sum $ fromJust <$> values) : (subSums $ tail' rest)
+findNumber :: String -> Int
+findNumber line = ((*) 10 $ toInt $ find isDigit line) + (toInt $ find isDigit $ reverse line)
     where
-        (values, rest) = span isJust l
+        toInt (Just a) = digitToInt a
+
+f :: [String] -> Int
+f = sum . map findNumber
 
 main :: IO ()
-main = interact $ show . maximum . subSums . (map readMaybe) . lines
+main = interact $ show . f . lines
+
