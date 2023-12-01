@@ -1,0 +1,33 @@
+module Main where
+import Data.List (stripPrefix)
+import Data.Char (isNumber)
+import Data.Maybe (fromJust)
+
+type Stack = [Char]
+type Move = [(Int, Int)]
+
+parseLines :: [String] -> ([Stack], [Move])
+parseLines l = (parseStacks stackLines, parseMoves moveLines)
+    where
+        (stackLinesRaw, moveLines) = span (not . null) l
+        stackLines = tail stackLinesRaw
+
+parseStacks :: [String] -> [Stack]
+parseStacks l = []
+
+parseMoves :: [String] -> [Move]
+parseMoves = map parseMove
+
+parseMove :: String -> Move
+parseMove s0 = let s1 = fromJust $ stripPrefix "move " s0
+               in let (ns, s2) = span isNumber s1
+                      n = read ns
+                      in let s3 = fromJust $ stripPrefix " from " s2
+                      in let (froms, s4) = span isNumber s3
+                             from = read froms
+                             in (n, from)
+
+applyMove :: [Stack] -> Move ->
+
+main :: IO ()
+main = interact $ let (stacks, moves) = parseLines . lines in show . foldl1 (applyMove stacks) moves
